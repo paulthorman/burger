@@ -1,29 +1,61 @@
-// Import the ORM to create functions that will interact with the database.
-var orm = require("../config/orm.js");
 
-var burger = {
-  all: function(cb) {
-    orm.all("burgers", function(res) {
-      cb(res);
-    });
-  },
-  // The variables cols and vals are arrays.
-  create: function(cols, vals, cb) {
-    orm.create("burgers", cols, vals, function(res) {
-      cb(res);
-    });
-  },
-  update: function(objColVals, condition, cb) {
-    orm.update("burgers", objColVals, condition, function(res) {
-      cb(res);
-    });
-  },
-  delete: function(condition, cb) {
-    orm.delete("burgers", condition, function(res) {
-      cb(res);
-    });
-  }
+// Import packages
+const path = require("path");
+
+// Talk to the ORM
+const orm = require(path.join(__dirname, "..", "config", "orm.js"));
+
+// Convert JS Date to MySQL Timestamp
+// Source: https://stackoverflow.com/questions/5129624/convert-js-date-time-to-mysql-datetime
+function getDate() {
+    // Get current time
+    let time = new Date();
+
+    // Convert to local time
+    time -= time.getTimezoneOffset() * 60000;
+
+    // Change the format to Timestamp
+    return new Date(time).toISOString().slice(0, 19).replace("T", " ");
+}
+
+const burger = {
+    "getBurgers": function(callback) {
+        orm.selectAll("burgers", callback);
+    },
+
+    "addBurger": function(name, devoured, callback) {
+        const object = {
+            name,
+            devoured,
+            "date": getDate()
+        }
+
+        orm.insertOne("burgers", object, callback);
+    },
+
+    "updateBurger": function(id, name, devoured, callback) {
+        const id_object = {
+            "name" : "id",
+            "value": id
+        };
+
+        const object = {
+            name,
+            devoured,
+            "date": getDate()
+        }
+        
+        orm.updateOne("burgers", id_object, object, callback);
+    },
+
+    "deleteBurger": function(id, callback) {
+        const id_object = {
+            "name" : "id",
+            "value": id
+        };
+        
+        orm.deleteOne("burgers", id_object, callback);
+    }
 };
 
-// Export the database functions for the controller (catsController.js).
 module.exports = burger;

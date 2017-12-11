@@ -1,6 +1,12 @@
-
-INSERT INTO burgers_db.burgers (burger_name)
-VALUES 
-("Double Double"),
-("Krusty Burger"),
-("Big Mac");
+INSERT INTO burgers (name, devoured) VALUES
+("Cheeseburger", true , ""),
+("Double Doube", true , ""),
+("3x3", false, ""),
+("4x4", false, ""),
+("Big Mac", false, ""),
+("Whopper", true , ""),
+("El Diablo", true , ""),
+("Primetime", false, ""),
+("Buffalo Bill", false, ""),
+("Greek", false, ""),
+("Thunderbird", true , ""),

@@ -1,91 +1,57 @@
-// Import MySQL connection.
-var connection = require("../config/connection.js");
+// Import packages
+const mysql = require("mysql");
+const path  = require("path");
 
-// Helper function for SQL syntax.
-function printQuestionMarks(num) {
-  var arr = [];
+// Talk to the database
+const pool = require(path.join(__dirname, "connection.js"));
 
-  for (var i = 0; i < num; i++) {
-    arr.push("?");
-  }
-
-  return arr.toString();
+// Add double quotation marks around strings for SQL queries
+function addQuotes(x) {
+    return (typeof x === "string") ? `"${x}"` : `${x}`;
 }
 
-// Helper function for SQL syntax.
-function objToSql(ob) {
-  var arr = [];
+function querySQL(sql_command, callback) {
+    pool.query(sql_command, (error, results) => {
+        if (error) throw error;
 
-  for (var key in ob) {
-    if (Object.hasOwnProperty.call(ob, key)) {
-      arr.push(key + "=" + ob[key]);
+        callback(results);
+    });
+}
+
+const orm = {
+    // Select all rows in a table
+    "selectAll": function(table_name, callback) {
+        querySQL(`SELECT * FROM ${table_name};`, callback);
+    },
+
+    // Insert a row into a table
+    "insertOne": function(table_name, object, callback) {
+        const keys = [], values = [];
+
+        // Use a for loop to pair keys and values correctly (Object.values is not fully implemented yet)
+        for (let key in object) {
+            keys.push(key);
+            values.push(addQuotes(object[key]));
+        }
+        
+        querySQL(`INSERT INTO ${table_name} (${keys.join(", ")}) VALUES (${values.join(", ")});`, callback);
+    },
+
+    // Update a row in a table
+    "updateOne": function(table_name, id_object, object, callback) {
+        const key_values = [];
+
+        for (let key in object) {
+            key_values.push(`${key} = ${addQuotes(object[key])}`);
+        }
+
+        querySQL(`UPDATE ${table_name} SET ${key_values.join(", ")} WHERE ${id_object.name} = ${id_object.value};`, callback);
+    },
+
+    // Delete a row from a table
+    "deleteOne": function(table_name, id_object, callback) {
+        querySQL(`DELETE FROM ${table_name} WHERE ${id_object.name} = ${id_object.value};`, callback);
     }
-  }
-
-  return arr.toString();
 }
-
-// Object for all our SQL statement functions.
-var orm = {
-  all: function(tableInput, cb) {
-    var queryString = "SELECT * FROM " + tableInput + ";";
-    connection.query(queryString, function(err, result) {
-      if (err) {
-        throw err;
-      }
-      cb(result);
-    });
-  },
-  create: function(table, cols, vals, cb) {
-    var queryString = "INSERT INTO " + table;
-
-    queryString += " (";
-    queryString += cols.toString();
-    queryString += ") ";
-    queryString += "VALUES (";
-    queryString += printQuestionMarks(vals.length);
-    queryString += ") ";
-
-    console.log(queryString);
-
-    connection.query(queryString, vals, function(err, result) {
-      if (err) {
-        throw err;
-      }
-      cb(result);
-    });
-  },
-  // An example of objColVals would be {name: panther, sleepy: true}
-  update: function(table, objColVals, condition, cb) {
-    var queryString = "UPDATE " + table;
-
-    queryString += " SET ";
-    queryString += objToSql(objColVals);
-    queryString += " WHERE ";
-    queryString += condition;
-
-    console.log(queryString);
-    connection.query(queryString, function(err, result) {
-      if (err) {
-        throw err;
-      }
-
-      cb(result);
-    });
-  },
-  delete: function(table, condition, cb) {
-    var queryString = "DELETE FROM " + table;
-    queryString += " WHERE ";
-    queryString += condition;
-
-    connection.query(queryString, function(err, result) {
-      if (err) {
-        throw err;
-      }
-
-      cb(result);
-    });
-  }
-};
 
 module.exports = orm;
